@@ -146,6 +146,7 @@ export default function App() {
   const [bpCountdown, setBpCountdown] = useState<number>(24);
   const [scanProgress, setScanProgress] = useState<number>(68);
   const [hisPushStatus, setHisPushStatus] = useState<'idle' | 'pushing' | 'synced'>('idle');
+  const [mockSpeaking, setMockSpeaking] = useState<boolean>(false);
 
   // Gemini Live API Hook
   const { connect, disconnect, connectionState, isSpeaking, error: geminiError } = useGeminiLive(
@@ -609,13 +610,6 @@ export default function App() {
       {/* Main Kiosk Fullscreen Container (Responsive for Tablet) */}
       <div className="kiosk-fullscreen-container">
 
-        {/* Ambient Subtle Background Mottos */}
-        <div className="ambient-motto ambient-motto-left">
-          A healthier you starts here
-        </div>
-        <div className="ambient-motto ambient-motto-right">
-          Better Conversations<br />Healthier Tomorrows
-        </div>
 
         {/* Persistent Header */}
         <header className="kiosk-header">
@@ -648,12 +642,21 @@ export default function App() {
         {/* Upper Hero Area: 3D Doctor Mascot & Camera Viewfinder */}
         <section className="mascot-hero-section">
           {/* Central 3D Mascot Character - Enlarged with full space */}
-          <div className="mascot-avatar-wrapper">
-            <img 
-              src="/assets/doctor_mascot_clean.png" 
-              alt="MediKiosk Doctor Mascot" 
-              className="mascot-hero-img"
-            />
+          {/* Added onClick for manual demo testing */}
+          <div className="mascot-avatar-wrapper" onClick={() => setMockSpeaking(!mockSpeaking)} style={{ cursor: 'pointer' }}>
+            {!(isSpeaking || mockSpeaking) ? (
+              <video 
+                src="/doctor_idle.webm" 
+                className="mascot-hero-img"
+                autoPlay loop muted playsInline
+              />
+            ) : (
+              <video 
+                src="/doctor_talking.webm" 
+                className="mascot-hero-img"
+                autoPlay loop muted playsInline
+              />
+            )}
           </div>
 
           {/* Persistent Camera Viewfinder Widget (Top-Right of Hero) */}

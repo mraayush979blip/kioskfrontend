@@ -91,17 +91,23 @@ export const useGeminiLive = (systemInstruction: string) => {
               const parts = data.serverContent.modelTurn.parts;
               for (const part of parts) {
                 if (part.inlineData && part.inlineData.mimeType.startsWith('audio/pcm')) {
-                  // Received audio chunk from Gemini (24kHz)
                   setIsSpeaking(true);
+                  
+                  // Clear existing timeout
+                  if ((window as any).speakingTimeout) {
+                    clearTimeout((window as any).speakingTimeout);
+                  }
+                  // Keep speaking state active for a bit after the last chunk
+                  (window as any).speakingTimeout = setTimeout(() => {
+                    setIsSpeaking(false);
+                  }, 1500);
+
                   const pcmData = base64ToArrayBuffer(part.inlineData.data);
                   const int16Array = new Int16Array(pcmData);
                   // Send to audio worklet to play
                   audioWorkletNodeRef.current?.port.postMessage({ audio: int16Array });
                 }
               }
-            }
-            if (data.serverContent?.turnComplete) {
-              setIsSpeaking(false);
             }
           } catch (e) {
             console.error("Failed to parse websocket message", e);
