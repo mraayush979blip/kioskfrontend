@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useGeminiLive } from './hooks/useGeminiLive';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, 
@@ -146,6 +147,19 @@ export default function App() {
   const [scanProgress, setScanProgress] = useState<number>(68);
   const [hisPushStatus, setHisPushStatus] = useState<'idle' | 'pushing' | 'synced'>('idle');
 
+  // Gemini Live API Hook
+  const { connect, disconnect, connectionState, isSpeaking, error: geminiError } = useGeminiLive(
+    "You are MediKiosk, a helpful and empathetic clinical assistant. Ask the patient about their symptoms and chief complaint. Keep your responses concise (under 2 sentences) and natural."
+  );
+
+  // Manage Gemini connection lifecycle based on screen
+  useEffect(() => {
+    if (currentScreen === '15_CLINICAL_CONVERSATION') {
+      connect();
+    } else {
+      disconnect();
+    }
+  }, [currentScreen, connect, disconnect]);
   // Patient Profile Data
   const [patientData] = useState({
     name: 'Rahul Sharma',
@@ -458,8 +472,8 @@ export default function App() {
         };
       case '15_CLINICAL_CONVERSATION':
         return {
-          medikiosk: "To start with, can you tell me what brings you here today?",
-          you: "Listening..."
+          medikiosk: connectionState === 'connected' ? (isSpeaking ? "Speaking..." : "I'm listening...") : "Connecting to Gemini Live...",
+          you: isSpeaking ? "Listening..." : "Speak naturally..."
         };
       case '16_LISTENING':
         return {
@@ -770,7 +784,7 @@ export default function App() {
                     ))}
                   </div>
 
-                  <div style={{ textAlign: 'center', margin: 'clamp(8px, 1.5vh, 16px) 0' }}>
+                  <div style={{ textAlign: 'center', marginTop: 'auto', marginBottom: 'clamp(8px, 1.5vh, 16px)' }}>
                     <button className="btn-primary-pill" onClick={() => goTo('02_LANGUAGE')} style={{ padding: 'clamp(12px, 1.8vh, 16px) clamp(36px, 5vw, 56px)', fontSize: 'clamp(17px, 2.2vw, 20px)' }}>
                       <span>Start</span>
                       <ArrowRight size={22} />
@@ -1308,92 +1322,75 @@ export default function App() {
                 </motion.div>
               )}
 
-              {/* SCREEN 15: MAIN CLINICAL CONVERSATION */}
+              {/* SCREEN 15: MAIN CLINICAL CONVERSATION (GEMINI LIVE) */}
               {currentScreen === '15_CLINICAL_CONVERSATION' && (
                 <motion.div 
                   key="15_CLINICAL_CONVERSATION"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -12 }}
+                  style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}
                 >
                   <div className="card-header-block" style={{ marginBottom: '6px' }}>
                     <div className="card-speech-wave-icon">
-                      <div className="sound-bar"></div>
-                      <div className="sound-bar"></div>
-                      <div className="sound-bar"></div>
+                      {isSpeaking ? (
+                        <>
+                          <motion.div animate={{ height: [4, 16, 4] }} transition={{ repeat: Infinity, duration: 0.8 }} className="sound-bar"></motion.div>
+                          <motion.div animate={{ height: [4, 20, 4] }} transition={{ repeat: Infinity, duration: 0.6 }} className="sound-bar"></motion.div>
+                          <motion.div animate={{ height: [4, 12, 4] }} transition={{ repeat: Infinity, duration: 0.9 }} className="sound-bar"></motion.div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="sound-bar"></div>
+                          <div className="sound-bar"></div>
+                          <div className="sound-bar"></div>
+                        </>
+                      )}
                     </div>
                     <div>
-                      <div style={{ fontSize: '11.5px', color: '#64748b' }}>For example, you can say:</div>
-                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#0e6c38' }}>
-                        "I have a fever since yesterday" · "I have stomach pain"
+                      <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Gemini Live AI</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: connectionState === 'connected' ? '#0e6c38' : '#eab308' }}>
+                        {connectionState === 'connecting' && "Connecting to Server..."}
+                        {connectionState === 'connected' && "Connected. You can speak now."}
+                        {connectionState === 'error' && "Connection Error"}
+                        {connectionState === 'disconnected' && "Disconnected"}
                       </div>
                     </div>
                   </div>
 
-                  {/* Quick suggestion chips */}
-                  <div style={{ display: 'flex', gap: '6px', margin: '6px 0', flexWrap: 'wrap' }}>
-                    {['I have a fever', 'I have stomach pain', 'I want a general check-up'].map(chip => (
-                      <div 
-                        key={chip}
-                        style={{
-                          background: '#f4faf6',
-                          border: '1px solid var(--color-mint-border)',
-                          borderRadius: '999px',
-                          padding: '4px 10px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: '#0e6c38',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => {
-                          setTypedComplaint(chip);
-                          goTo('17_PROCESSING');
-                        }}
-                      >
-                        {chip}
-                      </div>
-                    ))}
-                  </div>
+                  {geminiError && (
+                    <div style={{ background: '#fee2e2', color: '#ef4444', padding: '8px', borderRadius: '8px', fontSize: '12px', marginTop: '10px' }}>
+                      {geminiError}
+                    </div>
+                  )}
 
-                  {/* Centered Large Voice Recording Button */}
-                  <div style={{ textAlign: 'center', margin: '10px 0' }}>
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <motion.div 
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      animate={connectionState === 'connected' && !isSpeaking ? { scale: [1, 1.05, 1] } : {}}
+                      transition={{ repeat: Infinity, duration: 2 }}
                       style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        background: '#16a34a',
-                        color: '#fff',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        boxShadow: '0 8px 20px rgba(22, 163, 74, 0.35)'
+                        background: isSpeaking ? '#e2e8f0' : (connectionState === 'connected' ? '#dcfce7' : '#f1f5f9'),
+                        width: '120px', height: '120px', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        border: `4px solid ${isSpeaking ? '#cbd5e1' : (connectionState === 'connected' ? '#4ade80' : '#cbd5e1')}`
                       }}
-                      onClick={() => goTo('17_PROCESSING')}
                     >
-                      <Mic size={28} />
+                      <Mic size={48} color={isSpeaking ? '#94a3b8' : (connectionState === 'connected' ? '#22c55e' : '#94a3b8')} />
                     </motion.div>
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#0e6c38', marginTop: '4px' }}>
-                      Tap to speak
-                    </div>
-                    <div style={{ fontSize: '10.5px', color: '#64748b' }}>
-                      I'm listening...
-                    </div>
                   </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <button className="btn-secondary-pill" onClick={() => goTo('19_TOUCH_INPUT')}>
-                      Prefer to type instead?
-                    </button>
+                  <div style={{ textAlign: 'center', marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button 
-                      onClick={() => goTo('23_RED_FLAG')}
-                      style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                      className="btn-primary-pill" 
+                      onClick={() => goTo('24_MEASUREMENTS_INTRO')} 
+                      style={{ background: '#0e6c38', padding: '12px 30px', margin: '0 auto' }}
                     >
-                      Simulate Red Flag
+                      <span>Finish Conversation</span>
+                      <ArrowRight size={18} />
                     </button>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>
+                      Powered by Google Gemini Multimodal Live API
+                    </div>
                   </div>
                 </motion.div>
               )}

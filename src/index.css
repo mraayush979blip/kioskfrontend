@@ -237,7 +237,7 @@ html, body {
 .mascot-hero-section {
   position: relative;
   width: 100%;
-  height: clamp(320px, 42vh, 460px);
+  height: clamp(380px, 52vh, 700px);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -261,7 +261,7 @@ html, body {
   object-fit: contain;
   filter: drop-shadow(0 20px 35px rgba(14, 108, 56, 0.18));
   transition: all 0.3s ease;
-  transform: scale(1.22);
+  transform: scale(1.15) translateY(20px);
   transform-origin: bottom center;
 }
 
@@ -357,6 +357,13 @@ html, body {
   justify-content: space-between;
   overflow-y: auto;
   min-height: 0;
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.kiosk-main-card::-webkit-scrollbar {
+  display: none;
 }
 
 .card-content-area {
