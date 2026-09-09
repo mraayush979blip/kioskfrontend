@@ -641,22 +641,33 @@ export default function App() {
 
         {/* Upper Hero Area: 3D Doctor Mascot & Camera Viewfinder */}
         <section className="mascot-hero-section">
-          {/* Central 3D Mascot Character - Enlarged with full space */}
           {/* Added onClick for manual demo testing */}
           <div className="mascot-avatar-wrapper" onClick={() => setMockSpeaking(!mockSpeaking)} style={{ cursor: 'pointer' }}>
-            {!(isSpeaking || mockSpeaking) ? (
-              <video 
-                src="/doctor_idle.webm" 
-                className="mascot-hero-img"
-                autoPlay loop muted playsInline
-              />
-            ) : (
-              <video 
-                src="/doctor_talking.webm" 
-                className="mascot-hero-img"
-                autoPlay loop muted playsInline
-              />
-            )}
+            {/* IDLE VIDEO */}
+            <video 
+              src="/doctor_idle.webm" 
+              className="mascot-hero-img"
+              autoPlay loop muted playsInline
+              style={{
+                opacity: !(isSpeaking || mockSpeaking) ? 1 : 0,
+                transition: 'opacity 0.4s ease-in-out',
+                transform: 'scale(1.15) translateY(25px)' // Pushed down so it doesn't cross the top header
+              }}
+            />
+            
+            {/* TALKING VIDEO */}
+            <video 
+              src="/doctor_talking.webm" 
+              className="mascot-hero-img"
+              autoPlay loop muted playsInline
+              style={{
+                position: 'absolute',
+                opacity: (isSpeaking || mockSpeaking) ? 1 : 0,
+                transition: 'opacity 0.4s ease-in-out',
+                transform: 'scale(0.95) translateY(-30px)', // Shifted up towards the header
+                pointerEvents: 'none' // Let clicks pass through to the wrapper
+              }}
+            />
           </div>
 
           {/* Persistent Camera Viewfinder Widget (Top-Right of Hero) */}

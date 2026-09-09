@@ -261,7 +261,7 @@ html, body {
   object-fit: contain;
   filter: drop-shadow(0 20px 35px rgba(14, 108, 56, 0.18));
   transition: all 0.3s ease;
-  transform: scale(1.15) translateY(20px);
+  transform: scale(1.05) translateY(15px);
   transform-origin: bottom center;
 }
 
